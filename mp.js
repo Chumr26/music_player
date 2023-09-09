@@ -24,7 +24,6 @@ const app = {
     isPlaying: false,
     isRandom: false,
     isRepeat: false,
-    isBarHovered: false,
     config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {},
     songs: [
         {
@@ -108,7 +107,7 @@ const app = {
         this.isRandom = this.config.isRandom
         this.isRepeat = this.config.isRepeat
         this.currentIndex = this.config.currentIndex || 0
-        this.progressSong = this.config.progressSong
+        this.progressSong = this.config.progressSong || 0
     },
     render: function () {
         const htmls = this.songs.map((song, index) => {
@@ -143,9 +142,9 @@ const app = {
     },
     handleEvents: function () {
         const _this = this
-        const cdWidth = cd.offsetWidth
-
+        
         //xử lý quay / dừng cd
+        const cdWidth = cd.offsetWidth
         const cdThumbAnimate = cdThumb.animate([
             { transform: 'rotate(360deg)' }
         ], {
@@ -186,10 +185,7 @@ const app = {
         audio.ontimeupdate = function () {
             if (audio.duration) {
                 const progressPercent = Math.floor(audio.currentTime / audio.duration * 100)
-                // cập nhật quá trình cho thanh tiến trình(nếu progress bar không bị hover)
-                if (!_this.isBarHovered) {
-                    progress.value = progressPercent
-                }
+                progress.value = progressPercent
                 //cập nhật màu cho thanh tiến trình
                 progress.style.background = `linear-gradient(
                     to right, 
@@ -203,14 +199,48 @@ const app = {
                 _this.setConfig("progressSong", audio.currentTime)
             }
         }
-        // xử lý khi progress bar được hover
-        progress.onmouseenter = function () {
-            _this.isBarHovered = true
-        }
-        progress.onmouseleave = function () {
-            _this.isBarHovered = false
+        // xử lý khi tương tác với progress bar
+        let isTouchingProgressBar = false
+        progress.addEventListener('touchstart', (e) => {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            isTouchingProgressBar = true;
+            $('.progress').style.height = '10px'
+            $('.progress').style.cursor = 'pointer'
+            const touchX = e.touches[0].clientX; // Vị trí ngón tay theo trục X
+            const progressRect = progress.getBoundingClientRect(); // Kích thước và vị trí của thanh progress
+            if (touchX >= progressRect.left && touchX <= progressRect.right) {
+                // Ngón tay chạm vào thanh progress
+                // Thực hiện xử lý ở đây, ví dụ: cập nhật audio.currentTime
+                const percent = (touchX - progressRect.left) / progressRect.width;
+                const seekTime = audio.duration * percent;
+                audio.currentTime = seekTime;
+            }
+        }, { passive: false })
+        progress.addEventListener('touchmove', (e) => {
+            if (isTouchingProgressBar) {
+                const touchX = e.touches[0].clientX; // Vị trí ngón tay theo trục X
+                const progressRect = progress.getBoundingClientRect(); // Kích thước và vị trí của thanh progress
 
-        }
+                if (touchX >= progressRect.left && touchX <= progressRect.right) {
+                    // Ngón tay di chuyển trong phạm vi của thanh progress
+                    const percent = (touchX - progressRect.left) / progressRect.width;
+                    const seekTime = audio.duration * percent;
+                    audio.currentTime = seekTime;
+                } else {
+                    console.log('không chạm progress')
+                    // Người dùng chạm ngoài phạm vi thanh progress
+                    // Không cập nhật giá trị audio.currentTime
+                }
+            }
+        }, { passive: true });
+        progress.addEventListener('touchend', e => {
+            $('.progress').style.height = ''
+            $('.progress').style.cursor = ''
+            isTouchingProgressBar = false;
+        }, { passive: false })
+
         //xử lý khi tua
         progress.onchange = function (e) {
             const seekTime = audio.duration / 100 * e.target.value
