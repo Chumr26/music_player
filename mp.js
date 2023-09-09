@@ -10,6 +10,8 @@ const audio = $('#audio')
 const playBtn = $('.btn-toggle-play')
 const player = $('.player')
 const progress = $('#progress')
+const currentTime = $('.current-time')
+const duration = $('.duration')
 const nextBtn = $('.btn-next')
 const prevBtn = $('.btn-prev')
 const randomBtn = $('.btn-random')
@@ -18,9 +20,11 @@ const playList = $('.playlist')
 
 const app = {
     currentIndex: 0,
+    progressSong: 0,
     isPlaying: false,
     isRandom: false,
     isRepeat: false,
+    isBarHovered: false,
     config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {},
     songs: [
         {
@@ -103,11 +107,13 @@ const app = {
     loadConfig: function () {
         this.isRandom = this.config.isRandom
         this.isRepeat = this.config.isRepeat
+        this.currentIndex = this.config.currentIndex || 0
+        this.progressSong = this.config.progressSong
     },
     render: function () {
         const htmls = this.songs.map((song, index) => {
             return `
-            <div class="song ${index === 0 ? 'active' : ''}" data-index="${index}">
+            <div class="song ${index === this.currentIndex ? 'active' : ''}" data-index="${index}">
                 <div class="thumb" style="background-image: url('${song.image}')"></div>
                 <div class="body">
                     <h3 class="title">${song.name}</h3>
@@ -168,6 +174,7 @@ const app = {
             player.classList.add('playing')
             _this.isPlaying = true
             cdThumbAnimate.play()
+            _this.setConfig('currentIndex', _this.currentIndex)
         }
         //khi song bị paused
         audio.onpause = function () {
@@ -179,8 +186,30 @@ const app = {
         audio.ontimeupdate = function () {
             if (audio.duration) {
                 const progressPercent = Math.floor(audio.currentTime / audio.duration * 100)
-                progress.value = progressPercent
+                // cập nhật quá trình cho thanh tiến trình(nếu progress bar không bị hover)
+                if (!_this.isBarHovered) {
+                    progress.value = progressPercent
+                }
+                //cập nhật màu cho thanh tiến trình
+                progress.style.background = `linear-gradient(
+                    to right, 
+                    var(--primary-color)${progress.value}%, 
+                    rgb(214, 214, 214)${progress.value}%
+                    )`
+                //cập nhật móc thời gian
+                currentTime.textContent = _this.formatTime(audio.currentTime)
+                duration.textContent = _this.formatTime(audio.duration)
+                //set current time config
+                _this.setConfig("progressSong", audio.currentTime)
             }
+        }
+        // xử lý khi progress bar được hover
+        progress.onmouseenter = function () {
+            _this.isBarHovered = true
+        }
+        progress.onmouseleave = function () {
+            _this.isBarHovered = false
+
         }
         //xử lý khi tua
         progress.onchange = function (e) {
@@ -189,12 +218,14 @@ const app = {
         }
         //khi click next
         nextBtn.onclick = function () {
+            _this.progressSong = 0
             _this.isRandom ? _this.randomSong() : _this.nextSong()
             audio.play()
             _this.ativeSong()
         }
         //khi click prev
         prevBtn.onclick = function () {
+            _this.progressSong = 0
             _this.isRandom ? _this.randomSong() : _this.prevSong()
             audio.play()
             _this.ativeSong()
@@ -217,20 +248,19 @@ const app = {
                 nextBtn.click()
             }
         }
-
+        // bài hát trong playlist được list
         playList.onclick = function (e) {
             let songClicked = e.target.closest('.song:not(.active)')
             let optionClicked = e.target.closest('.option')
             if (songClicked) {
                 _this.currentIndex = Number(songClicked.dataset.index)
+                _this.progressSong = 0
                 _this.loadCurrentSong()
                 audio.play()
                 _this.ativeSong()
             } else if (optionClicked) {
                 //click vào nút tùy chọn
             }
-            // console.log(songClicked)
-            // console.log(optionClicked)
         }
 
     },
@@ -238,6 +268,7 @@ const app = {
         heading.textContent = this.currentSong.name
         cdThumb.style.backgroundImage = `url(${this.currentSong.image})`
         audio.src = this.currentSong.path
+        audio.currentTime = this.progressSong
     },
     nextSong: function () {
         this.currentIndex++
@@ -274,10 +305,17 @@ const app = {
             })
         }, 100)
     },
+    formatTime: function (seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+
+        const formattedTime = `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        return formattedTime;
+    },
     start: function () {
+        //định nghĩa các thuộc tính cho object
         //Gán cấu hình từ localstorage cho ứng dụng
         this.loadConfig()
-        //định nghĩa các thuộc tính cho object
         this.defineProperties()
         this.handleEvents()
         this.loadCurrentSong()

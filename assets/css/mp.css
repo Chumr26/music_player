@@ -108,11 +108,18 @@ header h2 {
     background-color: var(--primary-color);
 }
 
+.timing {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-color);
+    font-size: small;
+}
+
 .progress {
     width: 100%;
     -webkit-appearance: none;
     appearance: none;
-    height: 6px;
+    height: 5px;
     background: #d3d3d3;
     outline: none;
     opacity: 0.7;
@@ -121,16 +128,16 @@ header h2 {
     border-radius: 5px;
 }
 
-/* .progress:hover {
-    width: 15px;
+.progress:hover {
+    /* width: 15px; */
     height: 10px;
-} */
+}
 
 .progress::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    /* width: 12px; */
-    /* height: 6px; */
+    /* width: 10px;
+    height: 5px; */
     background-color: var(--primary-color);
     cursor: pointer;
     border-radius: 50%;
@@ -139,8 +146,13 @@ header h2 {
 
 .progress:hover::-webkit-slider-thumb {
     width: 15px;
-    height: 10px;
+    height: 15px;
 }
+
+/* .timing {
+    color: var(--text-color);
+    font-size: small;
+} */
 
 /* PLAYLIST */
 .playlist {
