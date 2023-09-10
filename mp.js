@@ -27,6 +27,12 @@ const app = {
     config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {},
     songs: [
         {
+            name: "Khi Cơn Mơ Dần Phai",
+            singer: "Tez ft. Myra Trần",
+            path: "./assets/audio/onlymp3.to - khi_cơn_mơ_dần_phai___tez_ft._myra_trần-LdnXT8LFBds-192k-1694354262.mp3",
+            image: "https://i.ytimg.com/vi/LdnXT8LFBds/hqdefault.jpg"
+        },
+        {
             name: "không cần phải nói nhiều",
             singer: "tlinh ",
             path: "./assets/audio/onlymp3.to - tlinh không cần phải nói nhiều ft. Hoàng Tôn OFFICIAL MUSIC VIDEO-7CymvjGuY5k-192k-1694140656.mp3",
